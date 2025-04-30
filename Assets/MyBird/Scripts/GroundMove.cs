@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace MyBird
 {
-    //¹è°æ ½ºÅ©·Ñ ±¸Çö
+    //ë°°ê²½ ìŠ¤í¬ë¡¤ êµ¬í˜„
     public class GroundMove : MonoBehaviour
     {
         #region Variables
@@ -10,18 +10,22 @@ namespace MyBird
         #endregion
         private void Update()
         {
-            //¹è°æ ÀÌµ¿ 
+            //ë°°ê²½ ì´ë™ 
             Move();
         }
 
-        //¹è°æÀ» ¿ŞÂÊ (-x) ¹æÇâÀ¸·Î ÀÌµ¿ ,
-        //¹è°æÀÇ xÁÂÇ¥°¡ -8.4º¸´Ù °°°Å³ª ÀÛÀ¸¸é x ÁÂÇ¥¸¦ Á¦ÀÚ¸®·Î ³õ´Â´Ù
+        //ë°°ê²½ì„ ì™¼ìª½ (-x) ë°©í–¥ìœ¼ë¡œ ì´ë™ ,
+        //ë°°ê²½ì˜ xì¢Œí‘œê°€ -8.4ë³´ë‹¤ ê°™ê±°ë‚˜ ì‘ìœ¼ë©´ x ì¢Œí‘œë¥¼ ì œìë¦¬ë¡œ ë†“ëŠ”ë‹¤
         void Move()
         {
-            if (!GameManager.IsStart)
+            if (GameManager.IsStart == false)
+            {
                 return;
+            }
 
-            //¿ŞÂÊÀ¸·Î moveSpeed ¸¸Å­ ÀÌµ¿ 
+            float speed = (GameManager.IsDeath==true) ? (moveSpeed / 4f) : moveSpeed;
+            
+            //ì™¼ìª½ìœ¼ë¡œ moveSpeed ë§Œí¼ ì´ë™ 
             transform.Translate(Vector3.left * Time.deltaTime * moveSpeed, Space.World);
 
             //
@@ -30,5 +34,7 @@ namespace MyBird
                 transform.localPosition = new Vector3(transform.localPosition.x+8.4f, transform.localPosition.y, transform.localPosition.z);
             }
         }
+
+       
     }
 }

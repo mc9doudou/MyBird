@@ -1,44 +1,51 @@
 using UnityEngine;
-using System.Collections;
 namespace MyBird
 {
     public class Player : MonoBehaviour
     {
         #region Variables
         private Rigidbody2D rb2D;
+        private AudioSource audioSource;
+        public Animator animator;
 
-        //Á¡ÇÁ
-        private bool keyJump = false;           //Á¡ÇÁ Å° ÀÎÇ² Ã¼Å©
+        public DrawScore drawScore;
+       
+        //ì í”„
+        private bool keyJump = false;           //ì í”„ í‚¤ ì¸í’‹ ì²´í¬
         [SerializeField]
-        private float jumpForce = 5f;           //À§¹æÇâÀ¸·Î ÁÖ´Â Èû
+        private float jumpForce = 5f;           //ìœ„ë°©í–¥ìœ¼ë¡œ ì£¼ëŠ” í˜
 
-        //È¸Àü
+        //íšŒì „
         private Vector3 birdRotation;
-        //À§·Î ¿Ã¶ó°¥¶§ È¸Àü ¼Óµµ
+        //ìœ„ë¡œ ì˜¬ë¼ê°ˆë•Œ íšŒì „ ì†ë„
         [SerializeField]
         private float upRotate = 2.5f;
-        //³»·Á°¥¶§ È¸Àü ¼Óµµ
+        //ë‚´ë ¤ê°ˆë•Œ íšŒì „ ì†ë„
         [SerializeField]
         private float downRotate = -5f;
 
-        //ÀÌµ¿
-        //ÀÌµ¿¼Óµµ - Translate ½ÃÀÛÇÏ¸é ÀÚµ¿ ¿À¸¥ÂÊÀ¸·Î ÀÌµ¿
+        //ì´ë™
+        //ì´ë™ì†ë„ - Translate ì‹œì‘í•˜ë©´ ìë™ ì˜¤ë¥¸ìª½ìœ¼ë¡œ ì´ë™
         [SerializeField] 
         private float moveSpeed = 5f;
 
-        //´ë±â
-        [SerializeField] private float readyForce = 1f; 
+        //ëŒ€ê¸°
+        [SerializeField] private float readyForce = 1f;
+
+        //UI
+        public GameObject ReadyUI;
+        public GameObject resultUI;
         #endregion
 
         #region Unity Event Method
         // Start is called once before the first execution of Update after the MonoBehaviour is created
         void Start()
         {
-            //ÂüÁ¶
+            //ì°¸ì¡°
             rb2D = this.GetComponent<Rigidbody2D>();
-            
-            //ÃÊ±âÈ­
-            
+            audioSource = this.GetComponent<AudioSource>();
+            //ì´ˆê¸°í™”
+            //sampleAction += drawScore.drawScoreText;
         }
         private void FixedUpdate()
         {
@@ -50,76 +57,106 @@ namespace MyBird
         }
         private void Update()
         {
-            //ÀÎÇ²Ã³¸® 
+            /*if (GameManager.IsDeath)
+            {
+                return;
+            }*/
+
+            //ì¸í’‹ì²˜ë¦¬ 
             InputBird();
 
             if (GameManager.IsStart == false)
             {   
-                //¹öµå ´ë±â
+                //ë²„ë“œ ëŒ€ê¸°
                 ReadyBird();
                 return;
             }
 
-            //¹öµå È¸Àü
+            //ë²„ë“œ íšŒì „
             RotateBird();
 
-            //»õ ÀÌµ¿
+            //ìƒˆ ì´ë™
             MoveBird();
         }
 
         private void OnCollisionEnter2D(Collision2D collision)
         {
-            //collision : ºÎµóÈù Äİ¶óÀÌ´õ Á¤º¸¸¦ °¡Áö°í ÀÖ´Ù
+            //collision : ë¶€ë”›íŒ ì½œë¼ì´ë” ì •ë³´ë¥¼ ê°€ì§€ê³  ìˆë‹¤
             if (collision.gameObject.tag == "Ground")
             {
-                Debug.Log("Å©¶ó¿îµå Ãæµ¹");
+                //Debug.Log("í¬ë¼ìš´ë“œ ì¶©ëŒ");
+                DieBird();
+            }
+            
+        }
+        private void OnTriggerEnter2D(Collider2D collision)
+        {
+            //collision : ë¶€ë”›íŒ ì½œë¼ì´ë” ì •ë³´ë¥¼ ê°€ì§€ê³  ìˆë‹¤
+            if (collision.gameObject.tag == "Point")
+            {
+                GameManager.Score++;
+
+                    //SFX
+                    audioSource.Play();
+
+                //sampleAction?.Invoke();
+                //Debug.Log($"ì ìˆ˜ íšë“:{GameManager.Score}");
             }
             else if (collision.gameObject.tag == "Pipe")
             {
-                Debug.Log("±âµ¿ Ãæµ¹");
-            }
-
-        }
-
-        private void OnTiggerEnter2D(Collision2D collision)
-        {
-            //collision : ºÎµóÈù Äİ¶óÀÌ´õ Á¤º¸¸¦ °¡Áö°í ÀÖ´Ù
-            if (collision.gameObject.tag == "Point")
-            {
-                Debug.Log("Á¡¼ö È¹µæ");
+                //Debug.Log("ê¸°ë™ ì¶©ëŒ");
+                DieBird();
             }
         }
 
         #endregion
 
         #region Custom Method
-        //ÀÎÇ² ÇÔ¼öÃ³¸®
+        //ì¸í’‹ í•¨ìˆ˜ì²˜ë¦¬
         void InputBird()
         {
-            //½ºÆäÀÌ½ºÅ° ¶Ç´Â ¸¶¿ì½º ¿ŞÅ¬¸¯ ÀÔ·Â¹Ş±â 
+            if (GameManager.IsDeath)
+                return;
+#if UNITY_EDITOR
+            //ìŠ¤í˜ì´ìŠ¤í‚¤ ë˜ëŠ” ë§ˆìš°ìŠ¤ ì™¼í´ë¦­ ì…ë ¥ë°›ê¸° 
             keyJump |= Input.GetKeyDown(KeyCode.Space);
             keyJump |= Input.GetMouseButtonDown(0);
+#else
+            //í„°ì¹˜ ì¸í’‹ ì²˜ë¦¬
+            if (Input.touchCount > 0)
+            {
+                //ì²«ë²ˆì§¸ í„°ì¹˜ë§Œ ì²˜ë¦¬
+                Touch touch = Input.GetTouch(0);
 
-            //°ÔÀÓ ½ÃÀÛÀüÀÌ°í Å°°¡ ´­¸®¸é 
+                if (touch.phase == TouchPhase.Began)
+                {
+                    keyJump |= true;
+                }
+            }
+#endif
+
+            //ê²Œì„ ì‹œì‘ì „ì´ê³  í‚¤ê°€ ëˆŒë¦¬ë©´ 
             if (GameManager.IsStart == false && keyJump == true)
             {
-                GameManager.IsStart = true;
+            StartMove();
             }
         }
 
-        //¹öµå Á¡ÇÁÇÏ±â
+        //ë²„ë“œ ì í”„í•˜ê¸°
         void JumpBird()
         {
-            //¾Æ·¡ÂÊ¿¡¼­ À§ÂÊÀ¸·Î ÈûÀ» ÁØ´Ù
+            if (GameManager.IsDeath)
+                return;
+            //ì•„ë˜ìª½ì—ì„œ ìœ„ìª½ìœ¼ë¡œ í˜ì„ ì¤€ë‹¤
             //rb2D.AddForce(Vector2.up * jumpForce);
             rb2D.linearVelocity = Vector2.up * jumpForce;
         }
 
-        //¹öµå È¸ÀüÇÏ±â
+        //ë²„ë“œ íšŒì „í•˜ê¸°
         void RotateBird()
         {
-            //Á¡ÇÁÇØ¼­ ¿Ã¶ó°¥¶§ ÃÖ´ë + 30µµ ±îÁö È¸Àü  : retateSpeed = 2.5f uprotate
-            //³»·Á°¥¶§ ÃÖ¼Ò - 90µµ±îÁö È¸Àü    : rotateSpeed = -5f downrotate
+            //ì í”„í•´ì„œ ì˜¬ë¼ê°ˆë•Œ ìµœëŒ€ + 30ë„ ê¹Œì§€ íšŒì „  : retateSpeed = 2.5f uprotate
+            //ë‚´ë ¤ê°ˆë•Œ ìµœì†Œ - 90ë„ê¹Œì§€ íšŒì „    : rotateSpeed = -5f downrotate
             float rotateSpeed = 0f;
             if (rb2D.linearVelocity.y >0f)
             {
@@ -133,24 +170,51 @@ namespace MyBird
             this.transform.eulerAngles = birdRotation;
         } 
         
-        //¹öµå ´ë±â
+        //ë²„ë“œ ëŒ€ê¸°
         void ReadyBird()
         {
-            //¾Æ·¡ÂÊ¿¡¼­ ¶³¾îÁöÁö ¾Êµµ·Ï À§ÂÊÀ¸·Î ÈûÀ» ÁØ´Ù
+            //ì•„ë˜ìª½ì—ì„œ ë–¨ì–´ì§€ì§€ ì•Šë„ë¡ ìœ„ìª½ìœ¼ë¡œ í˜ì„ ì¤€ë‹¤
             if (rb2D.linearVelocity.y < 0f)
             {
                 rb2D.linearVelocity = Vector2.up * readyForce;
             }
         }
 
-        //¹öµå ÀÌµ¿
+        //ë²„ë“œ ì´ë™
         void MoveBird()
         {
-            if (GameManager.IsStart == false)
+            if (GameManager.IsStart == false || GameManager.IsDeath == true)
                 return;
             
             transform.Translate(Vector3.right * Time.deltaTime * moveSpeed, Space.World);
         }
-        #endregion
+
+        //ë²„ë“œ ì£½ìŒ
+        void DieBird()
+        {
+            //ë‘ë²ˆ ì£½ìŒ ì²´í¬
+            if (GameManager.IsDeath)
+                return;
+
+            GameManager.IsDeath = true;
+            animator.enabled = false;
+            rb2D.linearVelocity = Vector2.zero;
+
+            //VFX, SFX
+
+            //UI
+            resultUI.SetActive(true);
+
+        }
+
+        //ë²„ë“œ ì´ë™ ì‹œì‘
+        void StartMove()
+        {
+            GameManager.IsStart = true;
+            ReadyUI.SetActive(false);
+        }
+
+        
+#endregion
     }
 }

@@ -28,6 +28,5 @@ namespace MyBird
             transform.position = camera;*/
             this.transform.position = new Vector3(player.position.x+ offsetX, transform.position.y, transform.position.z);
         }
-        
     }
 }
